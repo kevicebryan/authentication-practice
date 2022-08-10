@@ -155,7 +155,9 @@ with the help of sessions, if user is authenticated and depending to the cookie 
 
 
 for more info read this:
-[Local Strategy](http://www.passportjs.org/packages/passport-local/)
+
+[Passport Local Strategy](http://www.passportjs.org/packages/passport-local/)
+
 [Passport Local Mongoose Docs](https://www.npmjs.com/package/passport-local-mongoose)
 
 
@@ -166,7 +168,38 @@ for more info read this:
 using OAuth2.0 and the google strategy, we only take the id from google and store it in our db, and google are responsible for the passwowrd checking.
 ```javascript
 const GoogleStrategy = require("passport-google-oauth20").Strategy; // <--- Google Passport Strategy
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
+      callbackURL: "http://localhost:3000/auth/google/secrets",
+    },
+    function (accessToken, refreshToken, profile, cb) {
+      console.log(profile);
+      User.findOrCreate({ googleId: profile.id }, function (err, user) {
+        return cb(err, user);
+      });
+    }
+  )
+);
 
+app.route("/auth/google").get(
+  passport.authenticate("google", {
+    scope: ["profile"],
+  })
+);
+
+app.get(
+  "/auth/google/secrets", // make sure this route is the same as the one u set up in ur Google Dev!
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  function (req, res) {
+    // Successful authentication, redirect secrets.
+    res.redirect("/secrets");
+  }
+);
 ```
 
 for more info read this:
+
+[Passport Google Strategy](http://www.passportjs.org/packages/passport-google-oauth20/)
